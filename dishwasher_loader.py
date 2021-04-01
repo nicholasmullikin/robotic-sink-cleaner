@@ -20,7 +20,7 @@ p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
 p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
 
 # Load sink
-posOffsetSink = [0, 0, 0]
+posOffsetSink = [1, 0, 0]
 meshScaleSink = [1, 1, 1]
 visualShapeIdSink = p.createVisualShape(
 	shapeType = p.GEOM_MESH,
@@ -48,7 +48,7 @@ p.createMultiBody(
 )
 
 # Load plates above sink
-plateStartPos = [0, 0, 0.5]
+plateStartPos = [0, 0, 2]
 plateStartOrient = p.getQuaternionFromEuler([90, 0, 0])
 plateId = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos, plateStartOrient)
 
@@ -83,7 +83,7 @@ for i in range(rangeI):
 		)
 
 # Load dishwasher to right of sink
-posOffsetDishwasher = [0, 0, 0]
+posOffsetDishwasher = [1.5, 0, 0.3]
 meshScaleDishwasher = [0.2, 0.2, 0.2]
 visualShapeIdDishwasher = p.createVisualShape(
 	shapeType = p.GEOM_MESH,
@@ -91,18 +91,18 @@ visualShapeIdDishwasher = p.createVisualShape(
 	rgbaColor = [1, 1, 1, 1],
 	specularColor = [0.4, .4, 0],
 	visualFramePosition = posOffsetDishwasher,
-	visualFrameOrientation = p.getQuaternionFromEuler([90,0,0]),
+	visualFrameOrientation = p.getQuaternionFromEuler([0,0,0]),
 	meshScale = meshScaleDishwasher
 )
 collisionShapeIdDishwasher = p.createCollisionShape(
 	shapeType = p.GEOM_MESH,
 	fileName = "custom-data/dishwasher/dishwasher_vhacd.obj",
 	collisionFramePosition = posOffsetDishwasher,
-	collisionFrameOrientation = p.getQuaternionFromEuler([90,0,0]),
+	collisionFrameOrientation = p.getQuaternionFromEuler([0,0,0]),
 	meshScale = meshScaleDishwasher
 )
 p.createMultiBody(
-	baseMass=100,
+	baseMass=1000,
 	baseInertialFramePosition=[0, 0, 0],
 	baseCollisionShapeIndex=collisionShapeIdDishwasher,
 	baseVisualShapeIndex=visualShapeIdDishwasher,
