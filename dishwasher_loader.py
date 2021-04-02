@@ -15,9 +15,9 @@ logId = p.startStateLogging(p.STATE_LOGGING_PROFILE_TIMINGS, "log.json")
 # Load what we are using as the floor
 planeId = p.loadURDF("data/plane/plane100.urdf", useMaximalCoordinates = True)
 
-p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
-p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
+p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)
 
 # Load sink
 posOffsetSink = [1, 0, 0]
@@ -40,47 +40,52 @@ collisionShapeIdSink = p.createCollisionShape(
 )
 p.createMultiBody(
 	baseMass = 100,
-	baseInertialFramePosition = [0, 0, 0],
+	baseInertialFramePosition = posOffsetSink,
 	baseVisualShapeIndex = visualShapeIdSink,
 	baseCollisionShapeIndex = collisionShapeIdSink,
 	basePosition = [-1, 0, 0.3],
 	useMaximalCoordinates = True
 )
 
-# Load plates above sink
+# Load plates/bowls/cup above sink
 plateStartPos = [0, 0, 2]
 plateStartOrient = p.getQuaternionFromEuler([90, 0, 0])
 plateId = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos, plateStartOrient)
+plateStartPos2 = [0.1, 0, 3]
+plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos2, plateStartOrient)
+plateStartPos3 = [0.2, 0, 4]
+plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos3, plateStartOrient)
 
-posOffsetPlate = [0, 0, 0]
+posOffsetPlate = [0, 0, 5]
 meshScalePlate = [0.02, 0.02, 0.02]
 visualShapeIdPlate = p.createVisualShape(
-	shapeType=p.GEOM_MESH,
-	fileName="custom-data/plate/plate.obj",
-	rgbaColor=[1, 0.5, 1, 1],
-	specularColor=[0.4, .4, 0],
-	visualFramePosition=posOffsetPlate,
-	meshScale=meshScalePlate
+	shapeType = p.GEOM_MESH,
+	fileName = "custom-data/plate/plate.obj",
+	rgbaColor = [1, 0.5, 1, 1],
+	specularColor = [0.4, .4, 0],
+	visualFramePosition = posOffsetPlate,
+	meshScale = meshScalePlate
 )
 collisionShapeIdPlate = p.createCollisionShape(
-	shapeType=p.GEOM_MESH,
-	fileName="custom-data/plate/plate.obj",
-	collisionFramePosition=posOffsetPlate,
-	meshScale=meshScalePlate
+	shapeType = p.GEOM_MESH,
+	fileName = "custom-data/plate/plate.obj",
+	collisionFramePosition = posOffsetPlate,
+	collisionFrameOrientation = p.getQuaternionFromEuler([0,0,0]),
+	meshScale = meshScalePlate
 )
+for i in range(2):
+	p.createMultiBody(
+		baseMass = 1,
+		baseInertialFramePosition = posOffsetPlate,
+		baseVisualShapeIndex = visualShapeIdPlate,
+		baseCollisionShapeIndex = collisionShapeIdPlate,
+		basePosition = posOffsetPlate,
+		useMaximalCoordinates = True
+	)
 
-rangeI = 2
-rangeJ = 2
-for i in range(rangeI):
-	for j in range(rangeJ):
-		p.createMultiBody(
-			baseMass = 5,
-			baseInertialFramePosition = [0, 0, 0],
-			baseVisualShapeIndex = visualShapeIdPlate,
-			baseCollisionShapeIndex = collisionShapeIdPlate,
-			basePosition = posOffsetPlate + [i / 4., j / 4., 0],
-			useMaximalCoordinates = True
-		)
+cupStartPos = [0, 0, 3]
+cupStartOrient = p.getQuaternionFromEuler([0, 0, 0])
+cupId = p.loadURDF("data/dinnerware/cup/cup_small.urdf", cupStartPos, cupStartOrient)
 
 # Load dishwasher to right of sink
 posOffsetDishwasher = [1.5, 0, 0.3]
@@ -91,19 +96,19 @@ visualShapeIdDishwasher = p.createVisualShape(
 	rgbaColor = [1, 1, 1, 1],
 	specularColor = [0.4, .4, 0],
 	visualFramePosition = posOffsetDishwasher,
-	visualFrameOrientation = p.getQuaternionFromEuler([0,0,0]),
+	visualFrameOrientation = p.getQuaternionFromEuler([90,0,0]),
 	meshScale = meshScaleDishwasher
 )
 collisionShapeIdDishwasher = p.createCollisionShape(
 	shapeType = p.GEOM_MESH,
 	fileName = "custom-data/dishwasher/dishwasher_vhacd.obj",
 	collisionFramePosition = posOffsetDishwasher,
-	collisionFrameOrientation = p.getQuaternionFromEuler([0,0,0]),
+	collisionFrameOrientation = p.getQuaternionFromEuler([90,0,0]),
 	meshScale = meshScaleDishwasher
 )
 p.createMultiBody(
 	baseMass=1000,
-	baseInertialFramePosition=[0, 0, 0],
+	baseInertialFramePosition=posOffsetDishwasher,
 	baseCollisionShapeIndex=collisionShapeIdDishwasher,
 	baseVisualShapeIndex=visualShapeIdDishwasher,
 	basePosition=[0, 0, 0.3],
@@ -112,7 +117,7 @@ p.createMultiBody(
 
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 p.stopStateLogging(logId)
-p.setGravity(0, 0, -9.81)
+p.setGravity(0, 0, -10)
 p.setRealTimeSimulation(1)
 
 while 1:
