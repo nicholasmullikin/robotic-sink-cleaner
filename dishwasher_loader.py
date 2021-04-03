@@ -1,8 +1,9 @@
 import pybullet as p
 import pybullet_data as p_data
 import time
-import numpy as n
+import numpy as np
 import matplotlib.pyplot as plt
+from utils import *
 
 # Connect to existing physics engine, if any, else create new physics engine
 # with graphical front-end
@@ -18,9 +19,9 @@ logId = p.startStateLogging(p.STATE_LOGGING_PROFILE_TIMINGS, "log.json")
 # Load what we are using as the floor
 planeId = p.loadURDF("data/plane/plane100.urdf", useMaximalCoordinates = True)
 
-p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)
+p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
+p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
 
 # Load sink
 posOffsetSink = [1, 0, 0.25]
@@ -94,7 +95,7 @@ cupStartOrient = p.getQuaternionFromEuler([0, 0, 0])
 cupId = p.loadURDF("data/dinnerware/cup/cup_small.urdf", cupStartPos, cupStartOrient,
 	globalScaling = 2)
 
-mugStartPos = [0, 0, 1.5]
+mugStartPos = [0, 0, 0.5]
 mugStartOrient = p.getQuaternionFromEuler([0, 0, 0])
 mugId = p.loadURDF("data/dinnerware/mug/mug.urdf", mugStartPos, mugStartOrient, 
 	globalScaling = 1.5)
@@ -128,27 +129,79 @@ p.createMultiBody(
 )
 
 # Load panda arm
-pandaStartPos = [0.75, -0.75, 0]
+pandaStartPos = [0.5, -0.75, 0]
 pandaStartOrient = p.getQuaternionFromEuler([0, 0, 0])
 pandaId = p.loadURDF("franka_panda/panda.urdf", pandaStartPos, pandaStartOrient,
-	globalScaling = 1)
+	globalScaling = 1.5, useFixedBase = 1)
 
 # Set initial joint configuration for panda arm
 initial_joint_config = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+jointIndices = len(initial_joint_config)
 p.setJointMotorControlArray(
 pandaId, 
-range(len(initial_joint_config)),
+range(jointIndices),
 p.POSITION_CONTROL, 
-targetPositions = initial_joint_config
+targetPositions = initial_joint_config # in radians
 )
 
-p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-p.stopStateLogging(logId)
-p.setGravity(0, 0, -10)
+# Testing arm movement
+curr_config = initial_joint_config
+final_config = [np.pi / 2, np.pi / 4, 0, np.pi / 2, 0, 0]
+
+# Camera setup
+width = 128
+height = 128
+fov = 60
+aspect = width / height
+near = 0.02
+far = 1
+
+view_matrix = p.computeViewMatrix([0, 0, 0.5], [0, 0, 0], [1, 0, 0])
+projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
+
+images = p.getCameraImage(
+	width,
+	height,
+	view_matrix,
+	projection_matrix,
+	shadow=True,
+	renderer=p.ER_BULLET_HARDWARE_OPENGL
+)
+
+print(images)
+
+# images = p.getCameraImage(
+# 	width,
+# 	height,
+# 	view_matrix,
+# 	projection_matrix,
+# 	shadow=True,
+# 	renderer=p.ER_TINY_RENDERER
+# )
+
+# p.stopStateLogging(logId)
+p.setGravity(0, 0, -9.81)
 p.setRealTimeSimulation(1)
 
 while 1:
 	p.stepSimulation() # needed for macOS
+	# images = p.getCameraImage(
+	# 	width,
+	# 	height,
+	# 	view_matrix,
+	# 	projection_matrix,
+	# 	shadow=True,
+	# 	renderer=p.ER_BULLET_HARDWARE_OPENGL
+	# )
+	# t = 0
+	# while t<=1:
+	# 		q1, q2, q3, q4, q5, q6 = get_point_parameters(curr_config, final_config, t)
+	# 		p.setJointMotorControlArray(
+	# 			pandaId, 
+	# 			range(jointIndices), 
+	# 			p.POSITION_CONTROL, 
+	# 			targetPositions = [q1, q2, q3, q4, q5, q6, curr_config[6], curr_config[7], curr_config[8], curr_config[9], curr_config[10]])
+	# 		t += 0.00003   
 	time.sleep(0.01)
 
 p.disconnect()
