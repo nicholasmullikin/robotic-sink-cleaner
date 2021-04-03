@@ -51,18 +51,18 @@ p.createMultiBody(
 )
 
 # Load plates/bowls/cup above sink
-plateStartPos = [0, 0, 2]
+plateStartPos = [0, 0, 3]
 plateStartOrient = p.getQuaternionFromEuler([90, 0, 0])
-plateId = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos, plateStartOrient, 
+plateId = p.loadURDF("data/dinnerware/plate/plate.urdf", plateStartPos, plateStartOrient, 
 	globalScaling = 1.5)
 plateStartPos2 = [0.1, 0, 2.25]
-plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos2, plateStartOrient, 
+plateId2 = p.loadURDF("data/dinnerware/plate/plate.urdf", plateStartPos2, plateStartOrient, 
 	globalScaling = 1.5)
 plateStartPos3 = [0.2, 0, 2.5]
-plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos3, plateStartOrient, 
+plateId2 = p.loadURDF("data/dinnerware/plate/plate.urdf", plateStartPos3, plateStartOrient, 
 	globalScaling = 1.5)
 
-posOffsetPlate = [0, 0, 1.25]
+posOffsetPlate = [0, 0, 1]
 meshScalePlate = [0.04, 0.04, 0.04]
 visualShapeIdPlate = p.createVisualShape(
 	shapeType = p.GEOM_MESH,
@@ -93,6 +93,11 @@ cupStartPos = [0, 0, 1.5]
 cupStartOrient = p.getQuaternionFromEuler([0, 0, 0])
 cupId = p.loadURDF("data/dinnerware/cup/cup_small.urdf", cupStartPos, cupStartOrient,
 	globalScaling = 2)
+
+mugStartPos = [0, 0, 1.5]
+mugStartOrient = p.getQuaternionFromEuler([0, 0, 0])
+mugId = p.loadURDF("data/dinnerware/mug/mug.urdf", mugStartPos, mugStartOrient, 
+	globalScaling = 1.5)
 
 # Load dishwasher to right of sink
 posOffsetDishwasher = [1.5, 0, 0.3]
@@ -137,7 +142,6 @@ p.POSITION_CONTROL,
 targetPositions = initial_joint_config
 )
 
-#
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 p.stopStateLogging(logId)
 p.setGravity(0, 0, -10)
