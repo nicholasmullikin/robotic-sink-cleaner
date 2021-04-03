@@ -10,6 +10,7 @@ connectionId = p.connect(p.SHARED_MEMORY)
 if (connectionId < 0):
 	p.connect(p.GUI)
 
+p.setAdditionalSearchPath(p_data.getDataPath())
 p.setPhysicsEngineParameter(numSolverIterations = 10)
 p.setTimeStep(1. / 120.)
 logId = p.startStateLogging(p.STATE_LOGGING_PROFILE_TIMINGS, "log.json")
@@ -121,24 +122,20 @@ p.createMultiBody(
 	useMaximalCoordinates=True
 )
 
-# Load kuka arm
-kukaStartPos = [1, -1, 0]
-kukaStartOrient = p.getQuaternionFromEuler([0, 0, 0])
-kukaScale = 0.5
-kukaId = p.loadURDF("custom-data/kuka/urdf/kr210l150.urdf", kukaStartPos, kukaStartOrient,
-	globalScaling = kukaScale)
-# kukaId = p.loadURDF("custom-data/kuka/urdf/model_free_base.urdf", kukaStartPos, kukaStartOrient,
-# 	globalScaling = 1)
+# Load panda arm
+pandaStartPos = [0.75, -0.75, 0]
+pandaStartOrient = p.getQuaternionFromEuler([0, 0, 0])
+pandaId = p.loadURDF("franka_panda/panda.urdf", pandaStartPos, pandaStartOrient,
+	globalScaling = 1)
 
-
-# Set initial joint configuration for kuka arm
-#initial_joint_config = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-# p.setJointMotorControlArray(
-# 	kukaId, 
-# 	range(len(initial_joint_config)),
-# 	p.POSITION_CONTROL, 
-# 	targetPositions = initial_joint_config
-# )
+# Set initial joint configuration for panda arm
+initial_joint_config = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+p.setJointMotorControlArray(
+pandaId, 
+range(len(initial_joint_config)),
+p.POSITION_CONTROL, 
+targetPositions = initial_joint_config
+)
 
 #
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
