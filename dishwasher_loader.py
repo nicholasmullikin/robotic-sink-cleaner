@@ -1,6 +1,8 @@
 import pybullet as p
 import pybullet_data as p_data
 import time
+import numpy as n
+import matplotlib.pyplot as plt
 
 # Connect to existing physics engine, if any, else create new physics engine
 # with graphical front-end
@@ -20,8 +22,8 @@ p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)
 
 # Load sink
-posOffsetSink = [1, 0, 0]
-meshScaleSink = [1, 1, 1]
+posOffsetSink = [1, 0, 0.25]
+meshScaleSink = [1.5, 1.5, 1.5]
 visualShapeIdSink = p.createVisualShape(
 	shapeType = p.GEOM_MESH,
 	fileName = "custom-data/sink/sink.obj",
@@ -50,14 +52,17 @@ p.createMultiBody(
 # Load plates/bowls/cup above sink
 plateStartPos = [0, 0, 2]
 plateStartOrient = p.getQuaternionFromEuler([90, 0, 0])
-plateId = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos, plateStartOrient)
-plateStartPos2 = [0.1, 0, 3]
-plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos2, plateStartOrient)
-plateStartPos3 = [0.2, 0, 4]
-plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos3, plateStartOrient)
+plateId = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos, plateStartOrient, 
+	globalScaling = 1.5)
+plateStartPos2 = [0.1, 0, 2.25]
+plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos2, plateStartOrient, 
+	globalScaling = 1.5)
+plateStartPos3 = [0.2, 0, 2.5]
+plateId2 = p.loadURDF("data/dinnerware/plate.urdf", plateStartPos3, plateStartOrient, 
+	globalScaling = 1.5)
 
-posOffsetPlate = [0, 0, 5]
-meshScalePlate = [0.02, 0.02, 0.02]
+posOffsetPlate = [0, 0, 1.25]
+meshScalePlate = [0.04, 0.04, 0.04]
 visualShapeIdPlate = p.createVisualShape(
 	shapeType = p.GEOM_MESH,
 	fileName = "custom-data/plate/plate.obj",
@@ -83,9 +88,10 @@ for i in range(2):
 		useMaximalCoordinates = True
 	)
 
-cupStartPos = [0, 0, 3]
+cupStartPos = [0, 0, 1.5]
 cupStartOrient = p.getQuaternionFromEuler([0, 0, 0])
-cupId = p.loadURDF("data/dinnerware/cup/cup_small.urdf", cupStartPos, cupStartOrient)
+cupId = p.loadURDF("data/dinnerware/cup/cup_small.urdf", cupStartPos, cupStartOrient,
+	globalScaling = 2)
 
 # Load dishwasher to right of sink
 posOffsetDishwasher = [1.5, 0, 0.3]
@@ -115,6 +121,26 @@ p.createMultiBody(
 	useMaximalCoordinates=True
 )
 
+# Load kuka arm
+kukaStartPos = [1, -1, 0]
+kukaStartOrient = p.getQuaternionFromEuler([0, 0, 0])
+kukaScale = 0.5
+kukaId = p.loadURDF("custom-data/kuka/urdf/kr210l150.urdf", kukaStartPos, kukaStartOrient,
+	globalScaling = kukaScale)
+# kukaId = p.loadURDF("custom-data/kuka/urdf/model_free_base.urdf", kukaStartPos, kukaStartOrient,
+# 	globalScaling = 1)
+
+
+# Set initial joint configuration for kuka arm
+#initial_joint_config = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+# p.setJointMotorControlArray(
+# 	kukaId, 
+# 	range(len(initial_joint_config)),
+# 	p.POSITION_CONTROL, 
+# 	targetPositions = initial_joint_config
+# )
+
+#
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 p.stopStateLogging(logId)
 p.setGravity(0, 0, -10)
@@ -123,3 +149,5 @@ p.setRealTimeSimulation(1)
 while 1:
 	p.stepSimulation() # needed for macOS
 	time.sleep(0.01)
+
+p.disconnect()
