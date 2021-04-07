@@ -84,32 +84,6 @@ dishwasherStartOrient = p.getQuaternionFromEuler([np.pi / 2, 0, 0])
 dishwasherId = p.loadURDF("custom-data/dishwasher/dishwasher.urdf", dishwasherStartPos, 
 	dishwasherStartOrient, useFixedBase = True)
 
-# meshScaleDishwasher = [0.2, 0.2, 0.2]
-# visualShapeIdDishwasher = p.createVisualShape(
-# 	shapeType = p.GEOM_MESH,
-# 	fileName = "custom-data/dishwasher/dishwasher.obj",
-# 	rgbaColor = [1, 1, 1, 1],
-# 	specularColor = [0.4, .4, 0],
-# 	visualFramePosition = posOffsetDishwasher,
-# 	visualFrameOrientation = p.getQuaternionFromEuler([90,0,0]),
-# 	meshScale = meshScaleDishwasher
-# )
-# collisionShapeIdDishwasher = p.createCollisionShape(
-# 	shapeType = p.GEOM_MESH,
-# 	fileName = "custom-data/dishwasher/dishwasher_vhacd.obj",
-# 	collisionFramePosition = posOffsetDishwasher,
-# 	collisionFrameOrientation = p.getQuaternionFromEuler([90,0,0]),
-# 	meshScale = meshScaleDishwasher
-# )
-# p.createMultiBody(
-# 	baseMass=1000,
-# 	baseInertialFramePosition=posOffsetDishwasher,
-# 	baseCollisionShapeIndex=collisionShapeIdDishwasher,
-# 	baseVisualShapeIndex=visualShapeIdDishwasher,
-# 	basePosition=[0, 0, 0.3],
-# 	useMaximalCoordinates=True
-# )
-
 # Load panda arm
 pandaStartPos = [0.5, -0.75, 0]
 pandaStartOrient = p.getQuaternionFromEuler([0, 0, 0])
@@ -117,7 +91,7 @@ pandaId = p.loadURDF("franka_panda/panda.urdf", pandaStartPos, pandaStartOrient,
 	globalScaling = 1.5, useFixedBase = 1)
 
 # Set initial joint configuration for panda arm
-initial_joint_config = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+initial_joint_config = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, np.pi]
 jointIndices = len(initial_joint_config)
 p.setJointMotorControlArray(
 pandaId, 
@@ -138,7 +112,7 @@ aspect = width / height
 near = 0.02
 far = 1
 
-view_matrix = p.computeViewMatrix([0, 0, 0.5], [0, 0, 0], [1, 0, 0])
+view_matrix = panda_camera_view(pandaId)
 projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
 
 images = p.getCameraImage(
@@ -146,8 +120,8 @@ images = p.getCameraImage(
 	height,
 	view_matrix,
 	projection_matrix,
-	shadow=True,
-	renderer=p.ER_BULLET_HARDWARE_OPENGL
+	shadow = True,
+	renderer = p.ER_BULLET_HARDWARE_OPENGL
 )
 
 # images = p.getCameraImage(
@@ -173,15 +147,27 @@ while 1:
 	# 	shadow=True,
 	# 	renderer=p.ER_BULLET_HARDWARE_OPENGL
 	# )
-	# t = 0
-	# while t<=1:
-	# 		q1, q2, q3, q4, q5, q6 = get_point_parameters(curr_config, final_config, t)
-	# 		p.setJointMotorControlArray(
-	# 			pandaId, 
-	# 			range(jointIndices), 
-	# 			p.POSITION_CONTROL, 
-	# 			targetPositions = [q1, q2, q3, q4, q5, q6, curr_config[6], curr_config[7], curr_config[8], curr_config[9], curr_config[10]])
-	# 		t += 0.00003   
+	t = 0
+	while t<=1:
+		q1, q2, q3, q4, q5, q6 = get_point_parameters(curr_config, final_config, t)
+		p.setJointMotorControlArray(
+			pandaId, 
+			range(jointIndices), 
+			p.POSITION_CONTROL, 
+			targetPositions = [q1, q2, q3, q4, q5, q6, curr_config[6], curr_config[7], curr_config[8], curr_config[9], curr_config[10]])
+		t += 0.00003  
+		
+		view_matrix = panda_camera_view(pandaId)
+		images = p.getCameraImage(
+			width,
+			height,
+			view_matrix,
+			projection_matrix,
+			shadow = True,
+			renderer = p.ER_BULLET_HARDWARE_OPENGL
+		) 
+		time.sleep(0.1)
+			
 	time.sleep(0.01)
 
 p.disconnect()
