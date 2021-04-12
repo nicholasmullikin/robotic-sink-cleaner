@@ -63,3 +63,33 @@ def getRayFromTo(mouseX, mouseY):
 	return rayFrom, rayTo, alpha
 
 
+def get_joint_info(armId):
+	lower_limit = []
+	upper_limit = []
+	for x in range(11):
+		one_joint_info = p.getJointInfo(armId, x)
+		lower_limit.append(one_joint_info[8])
+		upper_limit.append(one_joint_info[9])
+
+	return [lower_limit, upper_limit]
+
+
+def get_point_cloud(far, height, img, near, width):
+	depth_buffer = img[3]
+	img_w = int(width / 10)
+	img_h = int(height / 10)
+	step_x = 5
+	step_y = 5
+	point_cloud = []
+	for w in range(0, img_w, step_x):
+		for h in range(0, img_h, step_y):
+			ray_from, ray_to, alpha = getRayFromTo(w * (width / img_w), h * (height / img_h))
+			rf = np.array(ray_from)
+			rt = np.array(ray_to)
+			vec = rt - rf
+			depth_img = float(depth_buffer[h, w])
+			depth = far * near / (far - (far - near) * depth_img)
+			depth /= math.cos(alpha)
+			new_to = (depth / np.sqrt(np.dot(vec, vec))) * vec + rf
+			point_cloud.append(new_to)
+	# print(point_cloud)

@@ -123,27 +123,6 @@ def load_arm():
 	return panda_id
 
 
-def get_point_cloud(far, height, img, near, width):
-	depth_buffer = img[3]
-	img_w = int(width / 10)
-	img_h = int(height / 10)
-	step_x = 5
-	step_y = 5
-	point_cloud = []
-	for w in range(0, img_w, step_x):
-		for h in range(0, img_h, step_y):
-			ray_from, ray_to, alpha = getRayFromTo(w * (width / img_w), h * (height / img_h))
-			rf = np.array(ray_from)
-			rt = np.array(ray_to)
-			vec = rt - rf
-			depth_img = float(depth_buffer[h, w])
-			depth = far * near / (far - (far - near) * depth_img)
-			depth /= math.cos(alpha)
-			new_to = (depth / np.sqrt(np.dot(vec, vec))) * vec + rf
-			point_cloud.append(new_to)
-	print(point_cloud)
-
-
 if __name__ == '__main__':
 	start_engine()
 
@@ -153,17 +132,15 @@ if __name__ == '__main__':
 	# Load sink on left, dishes above sink, dishwasher on right, and robotic arm between sink and dishwasher
 	sinkId = load_sink()
 	plateIds = load_plates()
-	cupId =  load_cup()
-	mugId =  load_mug()
+	cupId = load_cup()
+	mugId = load_mug()
 	dishwasherId = load_dishwasher()
 	pandaId = load_arm()
 
 	obstacles = [sinkId, dishwasherId]
 
 	# Set initial joint configuration for panda arm (in radians)
-	# initial_joint_config = [np.pi/4., np.pi/4., 0, -np.pi/2., 0 ,  3*-np.pi/4.,  -np.pi/4., 0, 0, 0.04, 0.04]
-	initial_joint_config = [np.pi / 4., 0, 0, 0, np.pi, 0, 0, 0, 0, 0, 0]
-	# initial_joint_config = np.random.rand(11) * np.pi * 2
+	initial_joint_config = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 	# Testing arm movement
 	curr_config = initial_joint_config
@@ -173,17 +150,24 @@ if __name__ == '__main__':
 		pandaId,
 		range(jointIndices),
 		p.POSITION_CONTROL,
-		targetPositions=initial_joint_config)
+		targetPositions=initial_joint_config
+	)
 
-	joint_info = []
-	for x in range(11):
-		joint_info.append(p.getJointInfo(pandaId, x))
+	joint_info = get_joint_info(pandaId)
+	joint_lower_limits = joint_info[0]
+	joint_upper_limits = joint_info[1]
 
-	xId = p.addUserDebugParameter(paramName="x", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-np.pi)
-	yId = p.addUserDebugParameter(paramName="y", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
-	zId = p.addUserDebugParameter(paramName="z", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0.05)
-
-	# final_config = [np.pi / 2., np.pi / 4., 0, np.pi / 2., 0, 0]
+	q1Id = p.addUserDebugParameter(paramName="q1", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-1.587)
+	q2Id = p.addUserDebugParameter(paramName="q2", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0.132)
+	q3Id = p.addUserDebugParameter(paramName="q3", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-0.066)
+	q4Id = p.addUserDebugParameter(paramName="q4", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-1.058)
+	q5Id = p.addUserDebugParameter(paramName="q5", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[4])
+	q6Id = p.addUserDebugParameter(paramName="q6", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=1.058)
+	q7Id = p.addUserDebugParameter(paramName="q7", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0.661)
+	q8Id = p.addUserDebugParameter(paramName="q8", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-0.066)
+	q9Id = p.addUserDebugParameter(paramName="q9", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
+	q10Id = p.addUserDebugParameter(paramName="q10", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
+	q11Id = p.addUserDebugParameter(paramName="q11", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
 
 	# Camera setup
 	width = 1280
@@ -205,30 +189,44 @@ if __name__ == '__main__':
 		# needed for macOS
 		p.stepSimulation()
 
-		current_user_orient = [
-			p.readUserDebugParameter(xId),
-			p.readUserDebugParameter(yId),
-			p.readUserDebugParameter(zId)
-		]
+		# final_config = [np.pi / 2., np.pi / 4., 0, np.pi / 2., 0, 0]
 
-		if previous_orient != current_user_orient:
-			final_config = p.calculateInverseKinematics(
-				bodyUniqueId=pandaId,
-				endEffectorLinkIndex=8,
-				targetPosition=list(map(add, sinkStartPos, [0, 0, 0.5])),
-				targetOrientation=p.getQuaternionFromEuler(current_user_orient),
-				# residualThreshold=0.01,
-				# maxNumIterations=20000
-			)[0:9]
+		# if previous_orient != current_user_orient:
+		# 	final_config = p.calculateInverseKinematics(
+		# 		bodyUniqueId=pandaId,
+		# 		endEffectorLinkIndex=8,
+		# 		targetPosition=np.array(sinkStartPos) + np.array([0, 0, 0.5]),
+		# 		targetOrientation=p.getQuaternionFromEuler(desired_orient),
+		# 		lowerLimits=joint_lower_limits,
+		# 		upperLimits=joint_upper_limits
+		# 		# residualThreshold=0.01,
+		# 		# maxNumIterations=20000
+		# 	)[0:9]
+		#
+		# previous_orient = current_user_orient
 
-		previous_orient = current_user_orient
+		# target_pos = [
+		# 	p.readUserDebugParameter(q1Id),
+		# 	p.readUserDebugParameter(q2Id),
+		# 	p.readUserDebugParameter(q3Id),
+		# 	p.readUserDebugParameter(q4Id),
+		# 	p.readUserDebugParameter(q5Id),
+		# 	p.readUserDebugParameter(q6Id),
+		# 	p.readUserDebugParameter(q7Id),
+		# 	p.readUserDebugParameter(q8Id),
+		# 	p.readUserDebugParameter(q9Id),
+		# 	p.readUserDebugParameter(q10Id),
+		# 	p.readUserDebugParameter(q11Id),
+		# ]
 
-		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, final_config, t)
+		final_config = [-1.587, 0.132, -0.066, -1.058, 0, 1.058, 0.661, -0.066, 0, 0, 0]
+		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, final_config[:9], t)
+
 		p.setJointMotorControlArray(
 			pandaId,
 			range(jointIndices),
 			p.POSITION_CONTROL,
-			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, curr_config[9], curr_config[10]]
+			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0]
 		)
 
 		img = p.getCameraImage(
@@ -240,7 +238,7 @@ if __name__ == '__main__':
 		)
 
 		if t < 1:
-			t += 0.01
+			t += 0.05
 		else:
 			# print("Goal:")
 			goal_pos = list(map(add, sinkStartPos, [0, 0, 0.5]))
@@ -255,12 +253,12 @@ if __name__ == '__main__':
 			if np.linalg.norm(diff, 2) < 0.1:
 				get_point_cloud(far, height, img, near, width)
 
-				collision_fn = get_collision_fn(
-					pandaId,
-					[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-					obstacles=obstacles,
-					attachments=[],
-					self_collisions=True,
-					disabled_collisions=set()
-				)
-				print(collision_fn([q1, q2, q3, q4, q5, q6, q7, q8, q9]))
+				# collision_fn = get_collision_fn(
+				# 	pandaId,
+				# 	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+				# 	obstacles=obstacles,
+				# 	attachments=[],
+				# 	self_collisions=True,
+				# 	disabled_collisions=set()
+				# )
+				# print(collision_fn([q1, q2, q3, q4, q5, q6, q7, q8, q9]))
