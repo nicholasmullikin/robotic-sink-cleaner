@@ -5,7 +5,6 @@ from operator import add, sub
 import numpy as np
 from collisionUtils import get_collision_fn
 
-
 sinkStartPos = [-0.25, 0, 0.5]
 pandaStartPos = [-0.25, -0.75, 0]
 
@@ -31,27 +30,27 @@ def load_sink():
 	sink_id = p.loadURDF("custom-data/sink/sink.urdf", sinkStartPos, sink_start_orient, useFixedBase=True)
 
 	# Sphere over sink for debugging
-	visual_shape_id = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
-	p.createMultiBody(
-		baseMass=0,
-		baseCollisionShapeIndex=-1,
-		baseVisualShapeIndex=visual_shape_id,
-		basePosition=pos,
-		useMaximalCoordinates=True
-	)
+	# visual_shape_id = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
+	# p.createMultiBody(
+	# 	baseMass=0,
+	# 	baseCollisionShapeIndex=-1,
+	# 	baseVisualShapeIndex=visual_shape_id,
+	# 	basePosition=pos,
+	# 	useMaximalCoordinates=True
+	# )
 
 	return sink_id
 
 
 def load_plates():
-	plate_start_pos = [0, 0, 3]
+	plate_start_pos = [-0.2, 0, 1.5]
 	plate_start_orient = p.getQuaternionFromEuler([90, 0, 0])
 	plate_id = p.loadURDF("data/dinnerware/plate/plate.urdf", plate_start_pos, plate_start_orient, globalScaling=1.5)
 
-	plate_start_pos2 = [0.1, 0, 2.25]
+	plate_start_pos2 = [0.1, 0, 2]
 	plate_id2 = p.loadURDF("data/dinnerware/plate/plate.urdf", plate_start_pos2, plate_start_orient, globalScaling=1.5)
 
-	plate_start_pos3 = [0.2, 0, 2.5]
+	plate_start_pos3 = [-0.1, 0, 2]
 	plate_id3 = p.loadURDF("data/dinnerware/plate/plate.urdf", plate_start_pos3, plate_start_orient, globalScaling=1.5)
 
 	pos_offset_plate = [0, 0, 1]
@@ -88,7 +87,7 @@ def load_plates():
 		useMaximalCoordinates=True
 	)
 
-	return [plate_id, plate_id2, plate_id3, plate_id4, plate_id5]
+	return plate_id, plate_id2, plate_id3, plate_id4, plate_id5
 
 
 def load_cup():
@@ -124,6 +123,7 @@ def load_arm():
 
 
 if __name__ == '__main__':
+	# Start physics engine
 	start_engine()
 
 	# Load what we are using as the floor
@@ -137,6 +137,7 @@ if __name__ == '__main__':
 	dishwasherId = load_dishwasher()
 	pandaId = load_arm()
 
+	# Identify obstacles for collision detection
 	obstacles = [sinkId, dishwasherId]
 
 	# Set initial joint configuration for panda arm (in radians)
@@ -145,6 +146,7 @@ if __name__ == '__main__':
 	# Testing arm movement
 	curr_config = initial_joint_config
 
+	# Initialize panda arm config
 	jointIndices = len(initial_joint_config)
 	p.setJointMotorControlArray(
 		pandaId,
@@ -153,48 +155,40 @@ if __name__ == '__main__':
 		targetPositions=initial_joint_config
 	)
 
-	joint_info = get_joint_info(pandaId)
-	joint_lower_limits = joint_info[0]
-	joint_upper_limits = joint_info[1]
-
+	# Sliders for debugging / interaction
 	q1Id = p.addUserDebugParameter(paramName="q1", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-1.587)
 	q2Id = p.addUserDebugParameter(paramName="q2", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0.132)
 	q3Id = p.addUserDebugParameter(paramName="q3", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-0.066)
 	q4Id = p.addUserDebugParameter(paramName="q4", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-1.058)
-	q5Id = p.addUserDebugParameter(paramName="q5", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[4])
-	q6Id = p.addUserDebugParameter(paramName="q6", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=1.058)
-	q7Id = p.addUserDebugParameter(paramName="q7", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0.661)
-	q8Id = p.addUserDebugParameter(paramName="q8", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-0.066)
+	q5Id = p.addUserDebugParameter(paramName="q5", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
+	q6Id = p.addUserDebugParameter(paramName="q6", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=1.124)
+	q7Id = p.addUserDebugParameter(paramName="q7", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=-0.926)
+	q8Id = p.addUserDebugParameter(paramName="q8", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
 	q9Id = p.addUserDebugParameter(paramName="q9", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
 	q10Id = p.addUserDebugParameter(paramName="q10", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
 	q11Id = p.addUserDebugParameter(paramName="q11", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
 
 	# Camera setup
-	width = 32
-	height = 32
+	width = 1920
+	height = 1080
 	fov = 60
 	aspect = width / height
 	near = 0.02
-	far = 1
-
-	view_matrix = panda_camera_view(pandaId)
-	projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
+	far = 10
 
 	# p.stopStateLogging(logId)
 	p.setGravity(0, 0, -9.81)
 	p.setRealTimeSimulation(1)
 	t = 0
-	previous_orient = [-1, -1, -1]
 
 	collision_fn = get_collision_fn(
-			pandaId,
-			[0, 1, 2, 3, 4, 5, 6, 7, 8],
-			obstacles=obstacles,
-			attachments=[],
-			self_collisions=True,
-			disabled_collisions=set()
-		)
-
+		pandaId,
+		[0, 1, 2, 3, 4, 5, 6, 7, 8],
+		obstacles=obstacles,
+		attachments=[],
+		self_collisions=True,
+		disabled_collisions=set()
+	)
 
 	while 1:
 		# needed for macOS
@@ -216,20 +210,22 @@ if __name__ == '__main__':
 		#
 		# previous_orient = current_user_orient
 
+		# Used for debugging / interaction from sliders
 		target_pos = [
-			p.readUserDebugParameter(q1Id),
-			p.readUserDebugParameter(q2Id),
-			p.readUserDebugParameter(q3Id),
-			p.readUserDebugParameter(q4Id),
-			p.readUserDebugParameter(q5Id),
-			p.readUserDebugParameter(q6Id),
-			p.readUserDebugParameter(q7Id),
-			p.readUserDebugParameter(q8Id),
-			p.readUserDebugParameter(q9Id),
-			p.readUserDebugParameter(q10Id),
-			p.readUserDebugParameter(q11Id),
+			p.readUserDebugParameter(q1Id),   # 0
+			p.readUserDebugParameter(q2Id),   # 1
+			p.readUserDebugParameter(q3Id),   # 2
+			p.readUserDebugParameter(q4Id),   # 3
+			p.readUserDebugParameter(q5Id),   # 4
+			p.readUserDebugParameter(q6Id),   # 5
+			p.readUserDebugParameter(q7Id),   # 6
+			p.readUserDebugParameter(q8Id),   # 7
+			p.readUserDebugParameter(q9Id),   # 8
+			p.readUserDebugParameter(q10Id),  # 9
+			p.readUserDebugParameter(q11Id),  # 10
 		]
 
+		# Optimal position for end effector over sink to view dishes
 		final_config = [-1.587, 0.132, -0.066, -1.058, 0, 1.058, 0.661, -0.066, 0, 0, 0]
 		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_pos[:9], t)
 
@@ -237,33 +233,25 @@ if __name__ == '__main__':
 			pandaId,
 			range(jointIndices),
 			p.POSITION_CONTROL,
-			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0]
+			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, target_pos[9], target_pos[10]]
 		)
 
 		img = p.getCameraImage(
 			width,
 			height,
 			panda_camera_view(pandaId),
-			projection_matrix,
+			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
 
-		print("In collision: ", collision_fn([q1, q2, q3, q4, q5, q6, q7, q8, q9]))
-
-
 		if t < 1:
-			t += 0.03
+			t += 0.05
 		else:
-			# print("Goal:")
 			goal_pos = list(map(add, sinkStartPos, [0, 0, 0.5]))
-			# print(goal_pos, p.getQuaternionFromEuler([np.pi, 0, 0]))
-			# print("Actual:")
-			ls = p.getLinkState(pandaId, 11, computeForwardKinematics=False)
-			# print(ls[0], ls[1])
-
-			diff = list(map(sub, ls[0], goal_pos))
-			print("Dist to target: ", np.linalg.norm(diff, 2))
-
-			if np.linalg.norm(diff, 2) < 0.05:
-				val = get_pc(img, near, far, fov, pandaId)
+			endPos = p.getLinkState(pandaId, 10, computeForwardKinematics=False)
+			diffVec = list(map(sub, endPos[0], goal_pos))
+			diff = np.linalg.norm(diffVec, 2)
+			if diff < 0.075:
+				pointCloud = get_point_cloud(img, near, far, fov, pandaId)
+				plot_point_cloud(pointCloud)
 				# get_point_cloud(img, width, height, far, near, end_effector_pos, target)
