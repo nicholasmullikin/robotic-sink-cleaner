@@ -170,8 +170,8 @@ if __name__ == '__main__':
 	q11Id = p.addUserDebugParameter(paramName="q11", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=0)
 
 	# Camera setup
-	width = 1280
-	height = 1280
+	width = 32
+	height = 32
 	fov = 60
 	aspect = width / height
 	near = 0.02
@@ -185,6 +185,17 @@ if __name__ == '__main__':
 	p.setRealTimeSimulation(1)
 	t = 0
 	previous_orient = [-1, -1, -1]
+
+	collision_fn = get_collision_fn(
+			pandaId,
+			[0, 1, 2, 3, 4, 5, 6, 7, 8],
+			obstacles=obstacles,
+			attachments=[],
+			self_collisions=True,
+			disabled_collisions=set()
+		)
+
+
 	while 1:
 		# needed for macOS
 		p.stepSimulation()
@@ -205,22 +216,22 @@ if __name__ == '__main__':
 		#
 		# previous_orient = current_user_orient
 
-		# target_pos = [
-		# 	p.readUserDebugParameter(q1Id),
-		# 	p.readUserDebugParameter(q2Id),
-		# 	p.readUserDebugParameter(q3Id),
-		# 	p.readUserDebugParameter(q4Id),
-		# 	p.readUserDebugParameter(q5Id),
-		# 	p.readUserDebugParameter(q6Id),
-		# 	p.readUserDebugParameter(q7Id),
-		# 	p.readUserDebugParameter(q8Id),
-		# 	p.readUserDebugParameter(q9Id),
-		# 	p.readUserDebugParameter(q10Id),
-		# 	p.readUserDebugParameter(q11Id),
-		# ]
+		target_pos = [
+			p.readUserDebugParameter(q1Id),
+			p.readUserDebugParameter(q2Id),
+			p.readUserDebugParameter(q3Id),
+			p.readUserDebugParameter(q4Id),
+			p.readUserDebugParameter(q5Id),
+			p.readUserDebugParameter(q6Id),
+			p.readUserDebugParameter(q7Id),
+			p.readUserDebugParameter(q8Id),
+			p.readUserDebugParameter(q9Id),
+			p.readUserDebugParameter(q10Id),
+			p.readUserDebugParameter(q11Id),
+		]
 
 		final_config = [-1.587, 0.132, -0.066, -1.058, 0, 1.058, 0.661, -0.066, 0, 0, 0]
-		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, final_config[:9], t)
+		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_pos[:9], t)
 
 		p.setJointMotorControlArray(
 			pandaId,
@@ -237,8 +248,11 @@ if __name__ == '__main__':
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
 
+		print("In collision: ", collision_fn([q1, q2, q3, q4, q5, q6, q7, q8, q9]))
+
+
 		if t < 1:
-			t += 0.05
+			t += 0.03
 		else:
 			# print("Goal:")
 			goal_pos = list(map(add, sinkStartPos, [0, 0, 0.5]))
@@ -250,15 +264,6 @@ if __name__ == '__main__':
 			diff = list(map(sub, ls[0], goal_pos))
 			print("Dist to target: ", np.linalg.norm(diff, 2))
 
-			if np.linalg.norm(diff, 2) < 0.1:
-				get_point_cloud(far, height, img, near, width)
-
-				# collision_fn = get_collision_fn(
-				# 	pandaId,
-				# 	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-				# 	obstacles=obstacles,
-				# 	attachments=[],
-				# 	self_collisions=True,
-				# 	disabled_collisions=set()
-				# )
-				# print(collision_fn([q1, q2, q3, q4, q5, q6, q7, q8, q9]))
+			if np.linalg.norm(diff, 2) < 0.05:
+				val = get_pc(img, near, far, fov, pandaId)
+				# get_point_cloud(img, width, height, far, near, end_effector_pos, target)

@@ -10,12 +10,17 @@ cube = p.loadURDF("cube.urdf", [0, 0, 1])
 
 
 def getRayFromTo(mouseX, mouseY):
-  width, height, viewMat, projMat, cameraUp, camForward, horizon, vertical, _, _, dist, camTarget = p.getDebugVisualizerCamera(
+  width, height, _, _, cameraUp, camForward, horizon, vertical, _, _, dist, camTarget = p.getDebugVisualizerCamera(
   )
+
+  horizon = [width*10, 10*width/2, 0]
+
+  print(horizon, vertical)
   camPos = [
       camTarget[0] - dist * camForward[0], camTarget[1] - dist * camForward[1],
       camTarget[2] - dist * camForward[2]
   ]
+  print(camPos)
   farPlane = 10000
   rayForward = [(camTarget[0] - camPos[0]), (camTarget[1] - camPos[1]), (camTarget[2] - camPos[2])]
   lenFwd = math.sqrt(rayForward[0] * rayForward[0] + rayForward[1] * rayForward[1] +
