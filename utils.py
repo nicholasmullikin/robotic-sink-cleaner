@@ -1,6 +1,7 @@
 import numpy as np
 import pybullet as p
 import math
+from plyfile import PlyData, PlyElement
 
 
 def get_point_parameters(curr, final, t):
@@ -53,11 +54,11 @@ def get_point_cloud(img, near, far, fov, pandaId):
 
 
 def plot_point_cloud(pointCloud):
+	visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[0, 0, 1, 1], radius=0.01)
 	for i in range(pointCloud.shape[0]):
 		for j in range(pointCloud.shape[1]):
 			new_to = pointCloud[i, j, :]
-			print(new_to)
-			visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[0, 0, 1, 1], radius=0.01)
+
 			# print("plot one point from cloud at ", new_to)
 			p.createMultiBody(
 				baseMass=0,
@@ -75,12 +76,38 @@ def from_camera_frame_to_world_frame(pointCloud, pandaId):
 	# camera_vector = rot_matrix.dot(init_camera_vector)
 	# camera_orient = p.getQuaternionFromEuler([camera_vector[0], camera_vector[1], camera_vector[2]])
 	# up_vector = rot_matrix.dot(init_up_vector)
-
+	camera_to_world = p.multiplyTransforms([0, 0, 0], camera_orient, [0, 0, 0], p.getQuaternionFromEuler([0, 0, np.pi]))[1]
 	for i in range(pointCloud.shape[0]):
 		for j in range(pointCloud.shape[1]):
 			pointCloud[i, j, :] = (p.multiplyTransforms(
-				camera_pos, camera_orient,
+				camera_pos, camera_to_world,
 				pointCloud[i, j, :], [0, 0, 0, 1])[0]
 			)
 
 	return pointCloud
+
+
+def to_ply_file(np_array):
+	# data = np.array([[0, 1, 2], [3, 4, 5]], dtype='i4')
+	data = np_array.transpose(2, 0, 1).reshape(3, -1).transpose(1, 0)
+
+	ply_faces = np.empty(len(data), dtype=[('vertex_indices', 'i4', (3,))])
+	ply_faces['vertex_indices'] = data
+
+	el = PlyElement.describe(ply_faces, 'sink')
+	PlyData([el]).write('sink_point_cloud.ply')
+
+
+def get_dish_pos_and_orient(dishId):
+	dishInfo = p.getBasePositionAndOrientation(dishId)
+	return dishInfo
+
+
+def get_all_joint_limits(pandaId):
+	lowerLimits = []
+	upperLimits = []
+	for i in range(11):
+		jointInfo = p.getJointInfo(pandaId, i)
+		lowerLimits += [jointInfo[8]]
+		upperLimits += [jointInfo[9]]
+	return [lowerLimits, upperLimits]
