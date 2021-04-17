@@ -4,8 +4,8 @@ import math
 from plyfile import PlyData, PlyElement
 
 
-def get_point_parameters(curr, final, t):
-	inst = np.array(curr[:9]) + t * (np.array(final) - np.array(curr[:9]))
+def get_point_parameters(curr, final, step, total):
+	inst = np.array(curr[:9]) + (step / total) * (np.array(final) - np.array(curr[:9]))
 	return inst
 
 
@@ -71,12 +71,10 @@ def plot_point_cloud(pointCloud):
 
 def from_camera_frame_to_world_frame(pointCloud, pandaId):
 	camera_pos, camera_orient, _, _, _, _ = p.getLinkState(pandaId, 11, computeForwardKinematics=False)
-	# rot_matrix = p.getMatrixFromQuaternion(end_effector_orient)
-	# rot_matrix = np.array(rot_matrix).reshape(3, 3)
-	# camera_vector = rot_matrix.dot(init_camera_vector)
-	# camera_orient = p.getQuaternionFromEuler([camera_vector[0], camera_vector[1], camera_vector[2]])
-	# up_vector = rot_matrix.dot(init_up_vector)
-	camera_to_world = p.multiplyTransforms([0, 0, 0], camera_orient, [0, 0, 0], p.getQuaternionFromEuler([0, 0, np.pi]))[1]
+	camera_to_world = p.multiplyTransforms(
+		[0, 0, 0], camera_orient,
+		[0, 0, 0], p.getQuaternionFromEuler([0, 0, np.pi])
+	)[1]
 	for i in range(pointCloud.shape[0]):
 		for j in range(pointCloud.shape[1]):
 			pointCloud[i, j, :] = (p.multiplyTransforms(
@@ -88,7 +86,6 @@ def from_camera_frame_to_world_frame(pointCloud, pandaId):
 
 
 def to_ply_file(np_array):
-	# data = np.array([[0, 1, 2], [3, 4, 5]], dtype='i4')
 	data = np_array.transpose(2, 0, 1).reshape(3, -1).transpose(1, 0)
 
 	ply_faces = np.empty(len(data), dtype=[('vertex_indices', 'i4', (3,))])

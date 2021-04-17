@@ -3,7 +3,6 @@ import pybullet as p
 import pybullet_data as p_data
 from operator import add, sub
 import numpy as np
-import time
 
 sinkStartPos = [-0.25, 0, 0.5]
 pandaStartPos = [-0.25, -1, 0]
@@ -30,30 +29,30 @@ def load_sink():
 	sink_id = p.loadURDF("custom-data/sink/sink.urdf", sinkStartPos, sink_start_orient, useFixedBase=True)
 
 	# Sphere over sink for debugging
-	# visual_shape_id = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
-	# p.createMultiBody(
-	# 	baseMass=0,
-	# 	baseCollisionShapeIndex=-1,
-	# 	baseVisualShapeIndex=visual_shape_id,
-	# 	basePosition=pos,
-	# 	useMaximalCoordinates=True
-	# )
+	visual_shape_id = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
+	p.createMultiBody(
+		baseMass=0,
+		baseCollisionShapeIndex=-1,
+		baseVisualShapeIndex=visual_shape_id,
+		basePosition=pos,
+		useMaximalCoordinates=True
+	)
 
 	return sink_id
 
 
 def load_plates():
-	plate_start_pos = [-0.2, 0, 0.5]
+	plate_start_pos = [0.25, 0, 0.75]
 	plate_start_orient = p.getQuaternionFromEuler([90, 0, 0])
 	plate_id = p.loadURDF("data/dinnerware/plate/plate.urdf", plate_start_pos, plate_start_orient, globalScaling=1.5)
 
-	plate_start_pos2 = [0.1, 0, 1]
+	plate_start_pos2 = [-0.2, 0, 0.75]
 	plate_id2 = p.loadURDF("data/dinnerware/plate/plate.urdf", plate_start_pos2, plate_start_orient, globalScaling=1.5)
 
-	plate_start_pos3 = [-0.1, 0, 1]
+	plate_start_pos3 = [0.15, 0, 1]
 	plate_id3 = p.loadURDF("data/dinnerware/plate/plate.urdf", plate_start_pos3, plate_start_orient, globalScaling=1.5)
 
-	pos_offset_plate = [0, 0, 0.75]
+	pos_offset_plate = [-0.25, 0, 0.5]
 	mesh_scale_plate = [0.04, 0.04, 0.04]
 	visual_shape_id_plate = p.createVisualShape(
 		shapeType=p.GEOM_MESH,
@@ -91,14 +90,14 @@ def load_plates():
 
 
 def load_cup():
-	cup_start_pos = [0, 0, 1.5]
+	cup_start_pos = [0.2, -0.1, 1.5]
 	cup_start_orient = p.getQuaternionFromEuler([0, 0, 0])
 	cup_id = p.loadURDF("data/dinnerware/cup/cup_small.urdf", cup_start_pos, cup_start_orient, globalScaling=2)
 	return cup_id
 
 
 def load_mug():
-	mug_start_pos = [0, 0, 0.5]
+	mug_start_pos = [-0.4, 0.1, 0.5]
 	mug_start_orient = p.getQuaternionFromEuler([0, 0, 0])
 	mug_id = p.loadURDF("data/dinnerware/mug/mug.urdf", mug_start_pos, mug_start_orient, globalScaling=1.5)
 	return mug_id
@@ -118,7 +117,12 @@ def load_dishwasher():
 
 def load_arm():
 	panda_start_orient = p.getQuaternionFromEuler([0, 0, np.pi])
-	panda_id = p.loadURDF("franka_panda/panda.urdf", pandaStartPos, panda_start_orient, globalScaling=1.5, useFixedBase=1)
+	panda_id = p.loadURDF(
+		"franka_panda/panda.urdf",
+		pandaStartPos,
+		panda_start_orient,
+		globalScaling=1.5,
+		useFixedBase=1)
 	return panda_id
 
 
@@ -167,43 +171,55 @@ if __name__ == '__main__':
 	p.setGravity(0, 0, -9.81)
 	p.setRealTimeSimulation(1)
 
-	# collision_fn = get_collision_fn(
-	# 	pandaId,
-	# 	[0, 1, 2, 3, 4, 5, 6, 7, 8],
-	# 	obstacles=obstacles,
-	# 	attachments=[],
-	# 	self_collisions=True,
-	# 	disabled_collisions=set()
-	# )
-
 	# needed for macOS
 	p.stepSimulation()
 
-	final_config = [-1.852, 0.132, 0.265, -1.124, 0, 1.455, -0.926, 0, 0, 1, 1]
+	final_config = [-1.455, -0.423, -0.198, -1.521, 0, 1.587, -0.860, 0, 0, 1, 1]
 	t = 0
-	while t < 1:
-		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, final_config[:9], t)
+	while t < 100:
+		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, final_config[:9], t, 100)
 		p.setJointMotorControlArray(
 			pandaId,
 			range(jointIndices),
 			p.POSITION_CONTROL,
 			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, final_config[9], final_config[10]]
 		)
-		img = p.getCameraImage(
+		p.getCameraImage(
 			width,
 			height,
 			panda_camera_view(pandaId),
 			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
-		t += 0.05
-	curr_config = final_config
+		curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, final_config[9], final_config[10]]
+		t += 1
 
-	# INSERT POINT CLOUD CALCULATION HERE
+	# Delay to let the dishes settle
 	delay = 0
-	while delay < 200:
+	while delay < 500:
 		p.stepSimulation()
+		p.getCameraImage(
+			width,
+			height,
+			panda_camera_view(pandaId),
+			p.computeProjectionMatrixFOV(fov, aspect, near, far),
+			renderer=p.ER_BULLET_HARDWARE_OPENGL
+		)
 		delay += 1
+
+	# Create point cloud
+	img = p.getCameraImage(
+		width,
+		height,
+		panda_camera_view(pandaId),
+		p.computeProjectionMatrixFOV(fov, aspect, near, far),
+		renderer=p.ER_BULLET_HARDWARE_OPENGL
+	)
+	point_cloud_created = False
+	while not point_cloud_created:
+		# point_cloud = get_point_cloud(img, near, far, fov, pandaId)
+		# plot_point_cloud(point_cloud)
+		point_cloud_created = True
 
 	# Initialize empty array
 	dishesInfo = np.empty((0, 7))
@@ -230,13 +246,13 @@ if __name__ == '__main__':
 	target_config = list(target_config + (1, 1))
 
 	# Custom modifications
-	target_config[0] = -1.653
-	target_config[1] = 0.423
+	target_config[0] = -1.455
+	target_config[1] = 0.275
 	target_config[2] = -0.198
-	target_config[3] = -1.653
+	target_config[3] = -2
 	target_config[4] = 0
-	target_config[5] = 2.249
-	target_config[6] = -0.728
+	target_config[5] = 2.183
+	target_config[6] = -0.529
 	target_config[7] = 0
 	target_config[8] = 0
 	target_config[9] = 1
@@ -244,8 +260,8 @@ if __name__ == '__main__':
 
 	# Move to correct location
 	t = 0
-	while t < 1:
-		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_config[:9], t)
+	while t < 100:
+		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_config[:9], t, 100)
 		p.setJointMotorControlArray(
 			pandaId,
 			range(jointIndices),
@@ -259,29 +275,29 @@ if __name__ == '__main__':
 			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
-		t += 0.05
-	curr_config = target_config
+		curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, 1, 1]
+		t += 1
 
 	# Close hand
-	target_config[9] = 0
-	target_config[10] = 0
-	t = 0
-	while t < 1:
-		p.setJointMotorControlArray(
-			pandaId,
-			range(jointIndices),
-			p.POSITION_CONTROL,
-			targetPositions=target_config
-		)
-		img = p.getCameraImage(
-			width,
-			height,
-			panda_camera_view(pandaId),
-			p.computeProjectionMatrixFOV(fov, aspect, near, far),
-			renderer=p.ER_BULLET_HARDWARE_OPENGL
-		)
-		t += 0.1
-	curr_config = target_config
+	# target_config[9] = 0
+	# target_config[10] = 0
+	# t = 0
+	# while t < 1:
+	# 	p.setJointMotorControlArray(
+	# 		pandaId,
+	# 		range(jointIndices),
+	# 		p.POSITION_CONTROL,
+	# 		targetPositions=target_config
+	# 	)
+	# 	img = p.getCameraImage(
+	# 		width,
+	# 		height,
+	# 		panda_camera_view(pandaId),
+	# 		p.computeProjectionMatrixFOV(fov, aspect, near, far),
+	# 		renderer=p.ER_BULLET_HARDWARE_OPENGL
+	# 	)
+	# 	t += 0.1
+	# curr_config = target_config
 
 	# Sliders for debugging / interaction
 	q1Id = p.addUserDebugParameter(paramName="q1", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[0])
@@ -303,45 +319,31 @@ if __name__ == '__main__':
 
 		# # Used for debugging / interaction from sliders
 		target_pos = [
-			p.readUserDebugParameter(q1Id),   # 0
-			p.readUserDebugParameter(q2Id),   # 1
-			p.readUserDebugParameter(q3Id),   # 2
-			p.readUserDebugParameter(q4Id),   # 3
-			p.readUserDebugParameter(q5Id),   # 4
-			p.readUserDebugParameter(q6Id),   # 5
-			p.readUserDebugParameter(q7Id),   # 6
-			p.readUserDebugParameter(q8Id),   # 7
-			p.readUserDebugParameter(q9Id),   # 8
+			p.readUserDebugParameter(q1Id),  # 0
+			p.readUserDebugParameter(q2Id),  # 1
+			p.readUserDebugParameter(q3Id),  # 2
+			p.readUserDebugParameter(q4Id),  # 3
+			p.readUserDebugParameter(q5Id),  # 4
+			p.readUserDebugParameter(q6Id),  # 5
+			p.readUserDebugParameter(q7Id),  # 6
+			p.readUserDebugParameter(q8Id),  # 7
+			p.readUserDebugParameter(q9Id),  # 8
 			p.readUserDebugParameter(q10Id),  # 9
 			p.readUserDebugParameter(q11Id),  # 10
 		]
 
-		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_pos[:9], t)
-		#
+		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_pos[:9], 1, 1)
+
 		p.setJointMotorControlArray(
 			pandaId,
 			range(jointIndices),
 			p.POSITION_CONTROL,
 			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, target_pos[9], target_pos[10]]
 		)
-
-		img = p.getCameraImage(
+		p.getCameraImage(
 			width,
 			height,
 			panda_camera_view(pandaId),
 			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
-
-	# 	if t < 1:
-	# 		t += 0.05
-	# 	else:
-	# 		goal_pos = list(map(add, sinkStartPos, [0, 0, 0.5]))
-	# 		endPos = p.getLinkState(pandaId, 10, computeForwardKinematics=False)
-	# 		diffVec = list(map(sub, endPos[0], goal_pos))
-	# 		diff = np.linalg.norm(diffVec, 2)
-	# 		if diff < 0.075:
-	# 			if not point_cloud_created:
-	# 				pointCloud = get_point_cloud(img, near, far, fov, pandaId)
-	# 				plot_point_cloud(pointCloud)
-	# 				point_cloud_created = True
