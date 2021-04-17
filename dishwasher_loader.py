@@ -90,7 +90,7 @@ def load_plates():
 
 
 def load_cup():
-	cup_start_pos = [0.2, -0.1, 1.5]
+	cup_start_pos = [0.25, -0.1, 1.5]
 	cup_start_orient = p.getQuaternionFromEuler([0, 0, 0])
 	cup_id = p.loadURDF("data/dinnerware/cup/cup_small.urdf", cup_start_pos, cup_start_orient, globalScaling=2)
 	return cup_id
@@ -104,7 +104,7 @@ def load_mug():
 
 
 def load_dishwasher():
-	dishwasher_start_pos = [2, 0, 0.5]
+	dishwasher_start_pos = [1.1, 0, 0.5]
 	dishwasher_start_orient = p.getQuaternionFromEuler([np.pi / 2, 0, 0])
 	dishwasher_id = p.loadURDF(
 		"custom-data/dishwasher/dishwasher.urdf",
@@ -247,12 +247,12 @@ if __name__ == '__main__':
 
 	# Custom modifications
 	target_config[0] = -1.455
-	target_config[1] = 0.275
-	target_config[2] = -0.198
+	target_config[1] = 0.265
+	target_config[2] = -0.132
 	target_config[3] = -2
 	target_config[4] = 0
 	target_config[5] = 2.183
-	target_config[6] = -0.529
+	target_config[6] = -0.265
 	target_config[7] = 0
 	target_config[8] = 0
 	target_config[9] = 1
@@ -279,15 +279,57 @@ if __name__ == '__main__':
 		t += 1
 
 	# Close hand
-	# target_config[9] = 0
-	# target_config[10] = 0
+	target_config[9] = 0
+	target_config[10] = 0
+	t = 0
+	while t < 1:
+		p.setJointMotorControlArray(
+			pandaId,
+			range(jointIndices),
+			p.POSITION_CONTROL,
+			targetPositions=target_config
+		)
+		img = p.getCameraImage(
+			width,
+			height,
+			panda_camera_view(pandaId),
+			p.computeProjectionMatrixFOV(fov, aspect, near, far),
+			renderer=p.ER_BULLET_HARDWARE_OPENGL
+		)
+		t += 0.1
+	curr_config = target_config
+
+	# Lift dish out of sink
+	target_config[1] = 0
+	t = 0
+	while t < 100:
+		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_config[:9], t, 1000)
+		p.setJointMotorControlArray(
+			pandaId,
+			range(jointIndices),
+			p.POSITION_CONTROL,
+			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 1, 1]
+		)
+		img = p.getCameraImage(
+			width,
+			height,
+			panda_camera_view(pandaId),
+			p.computeProjectionMatrixFOV(fov, aspect, near, far),
+			renderer=p.ER_BULLET_HARDWARE_OPENGL
+		)
+		curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, -1, -1]
+		t += 1
+	#
+	# # Position arm in dishwasher
+	# dishwasherPos = [3, 0.331, 0.529, -1.720, 0, 2.910, 0, 0, 1, 1]
 	# t = 0
-	# while t < 1:
+	# while t < 300:
+	# 	q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, dishwasherPos[:9], t, 300)
 	# 	p.setJointMotorControlArray(
 	# 		pandaId,
 	# 		range(jointIndices),
 	# 		p.POSITION_CONTROL,
-	# 		targetPositions=target_config
+	# 		targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 1, 1]
 	# 	)
 	# 	img = p.getCameraImage(
 	# 		width,
@@ -296,8 +338,8 @@ if __name__ == '__main__':
 	# 		p.computeProjectionMatrixFOV(fov, aspect, near, far),
 	# 		renderer=p.ER_BULLET_HARDWARE_OPENGL
 	# 	)
-	# 	t += 0.1
-	# curr_config = target_config
+	# 	curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, -1, -1]
+	# 	t += 1
 
 	# Sliders for debugging / interaction
 	q1Id = p.addUserDebugParameter(paramName="q1", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[0])
@@ -312,12 +354,10 @@ if __name__ == '__main__':
 	q10Id = p.addUserDebugParameter(paramName="q10", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[9])
 	q11Id = p.addUserDebugParameter(paramName="q11", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[10])
 
-	# point_cloud_created = False
 	while 1:
-		# needed for macOS
 		p.stepSimulation()
 
-		# # Used for debugging / interaction from sliders
+		# Used for debugging / interaction from sliders
 		target_pos = [
 			p.readUserDebugParameter(q1Id),  # 0
 			p.readUserDebugParameter(q2Id),  # 1
@@ -331,9 +371,7 @@ if __name__ == '__main__':
 			p.readUserDebugParameter(q10Id),  # 9
 			p.readUserDebugParameter(q11Id),  # 10
 		]
-
 		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_pos[:9], 1, 1)
-
 		p.setJointMotorControlArray(
 			pandaId,
 			range(jointIndices),
