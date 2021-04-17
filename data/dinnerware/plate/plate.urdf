@@ -62,6 +62,7 @@
     <inertial>
       <mass value="0.5"/>  <!-- mr^2 = 0.5*0.12^2 = 0.0072 for Z axis, lighter along other axis -->
       <inertia ixx="0.005" iyy="0.005" izz="0.0072"/>
+      <contact_coefficients mu="100" kp="0.9" kd="0.9"/>
     </inertial>
   </link>
 

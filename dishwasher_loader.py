@@ -174,7 +174,7 @@ if __name__ == '__main__':
 	# needed for macOS
 	p.stepSimulation()
 
-	final_config = [-1.455, -0.423, -0.198, -1.521, 0, 1.587, -0.860, 0, 0, 1, 1]
+	final_config = [-1.455, -0.423, -0.198, -1.521, 0, 1.587, -0.860, 0, 0, 0.06, 0.06]
 	t = 0
 	while t < 100:
 		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, final_config[:9], t, 100)
@@ -196,7 +196,7 @@ if __name__ == '__main__':
 
 	# Delay to let the dishes settle
 	delay = 0
-	while delay < 500:
+	while delay < 250:
 		p.stepSimulation()
 		p.getCameraImage(
 			width,
@@ -255,8 +255,8 @@ if __name__ == '__main__':
 	target_config[6] = -0.265
 	target_config[7] = 0
 	target_config[8] = 0
-	target_config[9] = 1
-	target_config[10] = 1
+	target_config[9] = 0.06
+	target_config[10] = 0.06
 
 	# Move to correct location
 	t = 0
@@ -282,6 +282,13 @@ if __name__ == '__main__':
 	target_config[9] = 0
 	target_config[10] = 0
 	t = 0
+
+	print(p.getDynamicsInfo(pandaId, 9))
+	print(p.getDynamicsInfo(pandaId, 10))
+	p.changeDynamics(pandaId, 9, lateralFriction=5, jointLimitForce=1000, maxJointVelocity=1000)
+	p.changeDynamics(pandaId, 10, lateralFriction=5, jointLimitForce=1000, maxJointVelocity=1000)
+	print(p.getDynamicsInfo(pandaId, 9))
+	print(p.getDynamicsInfo(pandaId, 10))
 	while t < 1:
 		p.setJointMotorControlArray(
 			pandaId,
@@ -296,19 +303,19 @@ if __name__ == '__main__':
 			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
-		t += 0.1
+		t += 0.001
 	curr_config = target_config
 
 	# Lift dish out of sink
 	target_config[1] = 0
 	t = 0
-	while t < 100:
+	while t < 50:
 		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_config[:9], t, 1000)
 		p.setJointMotorControlArray(
 			pandaId,
 			range(jointIndices),
 			p.POSITION_CONTROL,
-			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 1, 1]
+			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0]
 		)
 		img = p.getCameraImage(
 			width,
@@ -317,8 +324,8 @@ if __name__ == '__main__':
 			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
-		curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, -1, -1]
-		t += 1
+		# curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, -1, -1]
+		t += 0.5
 	#
 	# # Position arm in dishwasher
 	# dishwasherPos = [3, 0.331, 0.529, -1.720, 0, 2.910, 0, 0, 1, 1]
@@ -351,8 +358,8 @@ if __name__ == '__main__':
 	q7Id = p.addUserDebugParameter(paramName="q7", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[6])
 	q8Id = p.addUserDebugParameter(paramName="q8", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[7])
 	q9Id = p.addUserDebugParameter(paramName="q9", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[8])
-	q10Id = p.addUserDebugParameter(paramName="q10", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[9])
-	q11Id = p.addUserDebugParameter(paramName="q11", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[10])
+	q10Id = p.addUserDebugParameter(paramName="q10", rangeMin=-0.06, rangeMax=0.06, startValue=curr_config[9])
+	q11Id = p.addUserDebugParameter(paramName="q11", rangeMin=-0.06, rangeMax=0.06, startValue=curr_config[10])
 
 	while 1:
 		p.stepSimulation()
