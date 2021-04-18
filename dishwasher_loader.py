@@ -29,14 +29,14 @@ def load_sink():
 	sink_id = p.loadURDF("custom-data/sink/sink.urdf", sinkStartPos, sink_start_orient, useFixedBase=True)
 
 	# Sphere over sink for debugging
-	visual_shape_id = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
-	p.createMultiBody(
-		baseMass=0,
-		baseCollisionShapeIndex=-1,
-		baseVisualShapeIndex=visual_shape_id,
-		basePosition=pos,
-		useMaximalCoordinates=True
-	)
+	# visual_shape_id = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
+	# p.createMultiBody(
+	# 	baseMass=0,
+	# 	baseCollisionShapeIndex=-1,
+	# 	baseVisualShapeIndex=visual_shape_id,
+	# 	basePosition=pos,
+	# 	useMaximalCoordinates=True
+	# )
 
 	return sink_id
 
