@@ -123,6 +123,16 @@ def load_arm():
 		panda_start_orient,
 		globalScaling=1.5,
 		useFixedBase=1)
+	p.changeDynamics(
+		panda_id,
+		9,
+		lateralFriction=10,
+	)
+	p.changeDynamics(
+		panda_id,
+		10,
+		lateralFriction=10,
+	)
 	return panda_id
 
 
@@ -247,7 +257,7 @@ if __name__ == '__main__':
 
 	# Custom modifications
 	target_config[0] = -1.455
-	target_config[1] = 0.265
+	target_config[1] = 0.3
 	target_config[2] = -0.132
 	target_config[3] = -2
 	target_config[4] = 0
@@ -279,22 +289,14 @@ if __name__ == '__main__':
 		t += 1
 
 	# Close hand
-	target_config[9] = 0
-	target_config[10] = 0
 	t = 0
-
-	print(p.getDynamicsInfo(pandaId, 9))
-	print(p.getDynamicsInfo(pandaId, 10))
-	p.changeDynamics(pandaId, 9, lateralFriction=5, jointLimitForce=1000, maxJointVelocity=1000)
-	p.changeDynamics(pandaId, 10, lateralFriction=5, jointLimitForce=1000, maxJointVelocity=1000)
-	print(p.getDynamicsInfo(pandaId, 9))
-	print(p.getDynamicsInfo(pandaId, 10))
 	while t < 1:
 		p.setJointMotorControlArray(
 			pandaId,
-			range(jointIndices),
+			[9, 10],
 			p.POSITION_CONTROL,
-			targetPositions=target_config
+			targetPositions=[0, 0],
+			forces=[1000, 1000]
 		)
 		img = p.getCameraImage(
 			width,
@@ -303,19 +305,20 @@ if __name__ == '__main__':
 			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
-		t += 0.001
-	curr_config = target_config
+		t += 0.1
+	curr_config[9] = 0
+	curr_config[10] = 0
 
 	# Lift dish out of sink
-	target_config[1] = 0
+	target_config[1] = -0.5
 	t = 0
-	while t < 50:
+	while t < 100:
 		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, target_config[:9], t, 1000)
 		p.setJointMotorControlArray(
 			pandaId,
 			range(jointIndices),
 			p.POSITION_CONTROL,
-			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0]
+			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0],
 		)
 		img = p.getCameraImage(
 			width,
@@ -324,29 +327,49 @@ if __name__ == '__main__':
 			p.computeProjectionMatrixFOV(fov, aspect, near, far),
 			renderer=p.ER_BULLET_HARDWARE_OPENGL
 		)
-		# curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, -1, -1]
-		t += 0.5
-	#
-	# # Position arm in dishwasher
-	# dishwasherPos = [3, 0.331, 0.529, -1.720, 0, 2.910, 0, 0, 1, 1]
-	# t = 0
-	# while t < 300:
-	# 	q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, dishwasherPos[:9], t, 300)
-	# 	p.setJointMotorControlArray(
-	# 		pandaId,
-	# 		range(jointIndices),
-	# 		p.POSITION_CONTROL,
-	# 		targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 1, 1]
-	# 	)
-	# 	img = p.getCameraImage(
-	# 		width,
-	# 		height,
-	# 		panda_camera_view(pandaId),
-	# 		p.computeProjectionMatrixFOV(fov, aspect, near, far),
-	# 		renderer=p.ER_BULLET_HARDWARE_OPENGL
-	# 	)
-	# 	curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, -1, -1]
-	# 	t += 1
+		curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0]
+		t += 1
+
+	# Position arm in dishwasher
+	dishwasherPos = [3, 0.331, 0.595, -1.720, 0, 2.910, 0, 0, 0, 0]
+	t = 0
+	while t < 200:
+		q1, q2, q3, q4, q5, q6, q7, q8, q9, = get_point_parameters(curr_config, dishwasherPos[:9], t, 1500)
+		p.setJointMotorControlArray(
+			pandaId,
+			range(jointIndices),
+			p.POSITION_CONTROL,
+			targetPositions=[q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0],
+		)
+		img = p.getCameraImage(
+			width,
+			height,
+			panda_camera_view(pandaId),
+			p.computeProjectionMatrixFOV(fov, aspect, near, far),
+			renderer=p.ER_BULLET_HARDWARE_OPENGL
+		)
+		curr_config = [q1, q2, q3, q4, q5, q6, q7, q8, q9, 0, 0]
+		t += 1
+
+	# Open hand
+	t = 0
+	while t < 1:
+		p.setJointMotorControlArray(
+			pandaId,
+			[9, 10],
+			p.POSITION_CONTROL,
+			targetPositions=[1, 1]
+		)
+		img = p.getCameraImage(
+			width,
+			height,
+			panda_camera_view(pandaId),
+			p.computeProjectionMatrixFOV(fov, aspect, near, far),
+			renderer=p.ER_BULLET_HARDWARE_OPENGL
+		)
+		t += 0.1
+	curr_config[9] = 1
+	curr_config[10] = 1
 
 	# Sliders for debugging / interaction
 	q1Id = p.addUserDebugParameter(paramName="q1", rangeMin=-np.pi * 2, rangeMax=np.pi * 2, startValue=curr_config[0])
